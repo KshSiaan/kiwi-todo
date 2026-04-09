@@ -3,7 +3,6 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   // Enable SWCMinify for better performance
-  swcMinify: true,
   // Disable static optimization for dynamic content
   images: {
     unoptimized: true,

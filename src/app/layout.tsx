@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
+import { InstallPrompt } from "@/components/install-prompt";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -66,8 +67,10 @@ export default function RootLayout({
           }}
         />
         {children}
+        <InstallPrompt />
         <Toaster position="bottom-left" />
         <script
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
           dangerouslySetInnerHTML={{
             __html: `
               if ('serviceWorker' in navigator) {

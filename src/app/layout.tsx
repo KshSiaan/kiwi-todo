@@ -19,6 +19,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "KIWI - TODO",
   description: "A simple TODO app built with Next.js with Offline support",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "KIWI - TODO",
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export default function RootLayout({
@@ -38,6 +47,15 @@ export default function RootLayout({
         inter.variable,
       )}
     >
+      <head>
+        <meta name="theme-color" content="#ffffff" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="KIWI - TODO" />
+        <link rel="icon" href="/icon.svg" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
+      </head>
       <body className="min-h-full flex flex-col bg-zinc-100">
         <div
           className="absolute inset-0 -z-10"
@@ -49,6 +67,15 @@ export default function RootLayout({
         />
         {children}
         <Toaster position="bottom-left" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW registration failed:', err));
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );

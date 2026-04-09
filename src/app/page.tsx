@@ -1,65 +1,164 @@
-import Image from "next/image";
+"use client";
+import { Gauge } from "@/components/gauge";
+import LabelInput from "@/components/label-input";
+import { PopButton } from "@/components/pop-button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import db from "@/lib/db";
+import { cn } from "@/lib/utils";
+import { useLiveQuery } from "dexie-react-hooks";
+import { CheckIcon, Trash2Icon } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export default function Home() {
+  const todoset = useLiveQuery(() => db.todos.toArray(), []) || [];
+  const [text, setText] = useState("");
+  const handleAddTodo = async () => {
+    if (!text || text === "") {
+      return;
+    }
+    try {
+      await db.todos.add({
+        name: text,
+        completed: false,
+        createdAt: new Date(),
+        completedAt: undefined,
+      });
+      toast.success("TODO added successfully");
+      setText("");
+    } catch (error) {
+      console.error(error);
+      toast.error("Something went wrong");
+    }
+  };
+
+  const handleDeleteTodo = async (id: number) => {
+    try {
+      await db.todos.delete(id);
+      toast.success("TODO deleted successfully");
+    } catch (error) {
+      console.error(error);
+      toast.error("Something went wrong");
+    }
+  };
+
+  const handleCompleteTodo = async (id: number) => {
+    try {
+      const todo = await db.todos.get(id);
+      if (!todo) return;
+      await db.todos.update(id, {
+        completed: true,
+        completedAt: new Date(),
+      });
+      toast.success("TODO marked as completed");
+    } catch (error) {
+      console.error(error);
+      toast.error("Something went wrong");
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main className="w-full max-w-4xl mx-auto border bg-background min-h-dvh">
+      <div className="p-3 border-b flex items-center justify-between">
+        <h1 className="text-sm font-black">KIWI - TODO</h1>
+        <div className="">
+          <Gauge
+            value={
+              (todoset.filter((t) => t.completed).length /
+                (todoset.length || 1)) *
+              100
+            }
+            className={"size-8"}
+          />
+        </div>
+      </div>
+      <div className="p-6 flex gap-4">
+        <LabelInput
+          placeholder="Write your TODO..."
+          value={text}
+          onChange={(e) => {
+            setText(e.target.value);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              handleAddTodo();
+            }
+          }}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+        <PopButton onClick={handleAddTodo}>Add</PopButton>
+      </div>
+      <div className="p-6 border-t space-y-3">
+        {todoset.length === 0 ? (
+          <p className="text-muted-foreground text-sm text-center">
+            No TODOs found. Add a new one!
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+        ) : (
+          [...todoset].reverse().map((todo) => (
+            <div
+              key={todo.id}
+              className="border p-4 rounded w-full flex items-center justify-between"
+            >
+              <h4
+                className={cn(
+                  "text-sm ",
+                  todo.completed
+                    ? "text-muted-foreground line-through font-light"
+                    : "font-semibold",
+                )}
+              >
+                {todo.name}
+              </h4>
+              <div className="flex items-center gap-2">
+                <Button
+                  size={"icon-sm"}
+                  className="border-emerald-600 text-emerald-600"
+                  variant={"outline"}
+                  disabled={todo.completed}
+                  onClick={() => handleCompleteTodo(todo.id)}
+                >
+                  <CheckIcon />
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      size={"icon-sm"}
+                      className="border-destructive text-destructive"
+                      variant={"outline"}
+                    >
+                      <Trash2Icon />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Are you sure you want to delete this TODO?
+                      </AlertDialogTitle>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => handleDeleteTodo(todo.id)}
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </main>
   );
 }

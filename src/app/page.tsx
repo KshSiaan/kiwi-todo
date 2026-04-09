@@ -72,6 +72,7 @@ export default function Home() {
       <div className="p-3 border-b flex items-center justify-between">
         <h1 className="text-sm font-black">KIWI - TODO</h1>
         <div className="">
+          {/*  */}
           <Gauge
             value={
               (todoset.filter((t) => t.completed).length /
